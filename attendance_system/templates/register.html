@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="glass-card">
+            <h1 class="mb-4">Register New <span class="accent-text">User</span></h1>
+
+            <!-- Step 1: User Details -->
+            <div id="step-1" class="step-content active">
+                <form id="registration-form">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="reg-name" placeholder="John Doe" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Roll Number</label>
+                        <input type="text" class="form-control" id="reg-roll" placeholder="CS2023001" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Department</label>
+                        <select class="form-select" id="reg-dept" required>
+                            <option value="">Select Department</option>
+                            <option value="CSE A">CSE A</option>
+                            <option value="CSE B">CSE B</option>
+                            <option value="CSE C">CSE C</option>
+                            <option value="ECE">ECE</option>
+                            <option value="IT">IT</option>
+                            <option value="EE">EE</option>
+                            <option value="AIML">AIML</option>
+
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Next: Capture Faces</button>
+                </form>
+            </div>
+
+            <!-- Step 2: Face Capture -->
+            <div id="step-2" class="step-content">
+                <div class="text-center">
+                    <div id="capture-instructions" class="alert alert-info mb-3">
+                        <i class="fa-solid fa-circle-info me-2"></i>
+                        Slowly move your head <strong>Left, Right, Up, and Down</strong> for better accuracy.
+                    </div>
+                    <div class="video-container mb-3">
+                        <img id="capture-feed" class="video-feed" src="" alt="Webcam Feed">
+                    </div>
+
+                    <div id="progress-container" class="d-none">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="stat-label">Capturing Face Data</span>
+                            <span id="capture-count" class="accent-text fw-bold">0/100</span>
+                        </div>
+                        <div class="progress">
+                            <div id="capture-bar" class="progress-bar progress-bar-striped progress-bar-animated"
+                                role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <button id="btn-start-capture" class="btn btn-primary w-100">Start Capture</button>
+                    <button id="btn-to-train" class="btn btn-primary w-100 d-none">Next: Train Model</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Training -->
+            <div id="step-3" class="step-content text-center">
+                <div id="training-ui">
+                    <div class="fs-1 mb-3">⚙️</div>
+                    <h3>Training Model</h3>
+                    <p class="text-secondary mb-4">Wait while we process the facial features...</p>
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+
+                <div id="training-success" class="d-none">
+                    <div class="fs-1 mb-3">✅</div>
+                    <h3 class="accent-text">Registration Complete!</h3>
+                    <p class="text-secondary mb-4">User has been successfully registered and model is updated.</p>
+                    <a href="/" class="btn btn-primary">Go to Dashboard</a>
+                    <button onclick="location.reload()" class="btn btn-outline-light ms-2">Register Another</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentUserId = null;
+    let pollInterval = null;
+
+    document.getElementById('registration-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('reg-name').value;
+        const roll = document.getElementById('reg-roll').value;
+        const department = document.getElementById('reg-dept').value;
+
+        try {
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, roll, department })
+            });
+            const data = await response.json();
+
+            if (data.user_id) {
+                currentUserId = data.user_id;
+                transitionStep(1, 2);
+            } else {
+                alert(data.error || 'Registration failed');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
+
+    document.getElementById('btn-start-capture').addEventListener('click', async () => {
+        const btn = document.getElementById('btn-start-capture');
+        btn.disabled = true;
+        btn.innerText = 'Capturing...';
+
+        // document.getElementById('capture-overlay').classList.add('d-none'); // Overlay remains deleted
+        document.getElementById('progress-container').classList.remove('d-none');
+
+        // Start video feed
+        document.getElementById('capture-feed').src = '/video-feed';
+
+        // Signal backend to start capture
+        await fetch('/api/capture-start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: currentUserId })
+        });
+
+        // Poll for progress
+        pollInterval = setInterval(async () => {
+            const response = await fetch('/api/capture-status');
+            const data = await response.json();
+
+            const pct = (data.count / data.total) * 100;
+            document.getElementById('capture-bar').style.width = pct + '%';
+            document.getElementById('capture-count').innerText = `${data.count}/${data.total}`;
+
+            if (data.count >= data.total) {
+                clearInterval(pollInterval);
+                btn.classList.add('d-none');
+                document.getElementById('btn-to-train').classList.remove('d-none');
+                // Stop the feed to release camera
+                document.getElementById('capture-feed').src = '';
+            }
+        }, 500);
+    });
+
+    document.getElementById('btn-to-train').addEventListener('click', async () => {
+        transitionStep(2, 3);
+
+        try {
+            const response = await fetch('/api/train', { method: 'POST' });
+            if (response.ok) {
+                document.getElementById('training-ui').classList.add('d-none');
+                document.getElementById('training-success').classList.remove('d-none');
+            } else {
+                alert('Training failed');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
+
+    function transitionStep(from, to) {
+        document.getElementById(`step-${from}`).classList.remove('active');
+        document.getElementById(`step-${to}`).classList.add('active');
+
+        // Use Framer Motion for transition
+        const { motion } = window.Motion;
+        if (motion) {
+            motion.animate(`#step-${to}`,
+                { x: [50, 0], opacity: [0, 1] },
+                { duration: 0.5 }
+            );
+        }
+    }
+</script>
+{% endblock %}

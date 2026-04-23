@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Attendance Recognition</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body class="bg-dark text-light">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary">
+        <div class="container-fluid px-4 pe-lg-5">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+                <i class="bi bi-person-bounding-box text-primary fs-3"></i>
+                <span class="fw-bold tracking-wide">Vision<span class="text-primary">Sync</span></span>
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-primary rounded-pill px-4 fw-medium" data-bs-toggle="modal" data-bs-target="#loginModal">
+                    <i class="bi bi-person-fill me-2"></i>Profile Login
+                </button>
+                <button class="btn btn-outline-light rounded-circle p-2 lh-1"><i class="bi bi-gear"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-4 py-4 max-w-7xl">
+        <div class="row g-4">
+            
+            <!-- Left Panel: Camera Feed -->
+            <div class="col-lg-8">
+                <div class="card bg-dark border-secondary h-100 shadow-lg motion-element" id="scanner-card">
+                    <div class="card-header border-secondary d-flex justify-content-between align-items-center bg-black py-3">
+                        <h5 class="mb-0 fw-semibold text-white"><i class="bi bi-camera-video text-primary me-2"></i>Live Scanner</h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="spinner-grow text-danger spinner-grow-sm" role="status">
+                                <span class="visually-hidden">Recording...</span>
+                            </div>
+                            <span class="text-secondary small fw-medium">REC</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-0 position-relative bg-black d-flex justify-content-center align-items-center overflow-hidden" style="min-height: 60vh;">
+                        
+                        <!-- OpenCV MJPEG Camera Stream -->
+                        <img src="http://localhost:5000/video_feed" class="w-100 h-100 position-absolute top-0 start-0 z-0 object-fit-cover" alt="Live Camera Offline" onerror="this.src=''; this.alt='Connecting to Camera...';" />
+                        
+                        <!-- Scanning UI Elements remain on top -->
+                        <div class="scan-container position-relative z-1">
+                            <div class="scan-box border border-primary border-2 rounded-4 position-relative">
+                                <div class="scan-line"></div>
+                                <div class="corner top-left"></div>
+                                <div class="corner top-right"></div>
+                                <div class="corner bottom-left"></div>
+                                <div class="corner bottom-right"></div>
+                            </div>
+                        </div>
+
+                        <!-- Recognition overlay (Hidden initially) -->
+                        <div id="recognition-overlay" class="position-absolute bottom-0 start-50 translate-middle-x mb-4 z-2" style="opacity: 0;">
+                            <div class="glass-panel p-3 px-4 rounded-4 d-flex align-items-center gap-3 shadow-lg border-success" id="recognition-card">
+                                <img src="https://ui-avatars.com/api/?name=Alex+Johnson&background=0D8ABC&color=fff" id="overlay-img" class="rounded-circle border border-2 border-success" width="60" height="60" alt="User">
+                                <div>
+                                    <h5 class="mb-0 fw-bold text-white tracking-wide" id="overlay-name">Alex Johnson</h5>
+                                    <p class="mb-0 text-success small fw-medium mt-1"><i class="bi bi-check-circle-fill me-1"></i>Attendance Marked</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="card-footer border-secondary d-flex justify-content-between text-muted small bg-black py-3">
+                        <span><i class="bi bi-webcam me-1"></i> Camera ID: CAM-A104</span>
+                        <span><i class="bi bi-geo-alt me-1"></i> Main Entrance</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Data -->
+            <div class="col-lg-4 d-flex flex-column gap-4">
+                
+                <!-- Stats Overview -->
+                    <div class="col-12">
+                        <div class="card bg-dark border-secondary motion-element shadow h-100">
+                            <div class="card-body d-flex flex-column justify-content-center">
+                                <h6 class="text-muted mb-2 fw-medium">Today's Scans</h6>
+                                <h2 class="mb-0 fw-bold text-primary" id="total-count">0</h2>
+                            </div>
+                        </div>
+                    </div>
+
+                <!-- Recent Logs list -->
+                <div class="card bg-dark border-secondary flex-grow-1 shadow-lg motion-element">
+                    <div class="card-header border-secondary bg-black py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-semibold text-white"><i class="bi bi-clock-history text-primary me-2"></i>Recent Detections</h6>
+                            <button class="btn btn-sm btn-link text-decoration-none text-muted p-0">View All</button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0 overflow-auto" style="max-height: 400px;">
+                        <ul class="list-group list-group-flush" id="log-list">
+                            <!-- JS populated list -->
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark border-secondary text-light">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="loginModalLabel"><i class="bi bi-person-bounding-box text-primary me-2"></i>Profile Login</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="profileLoginForm">
+                        <div class="mb-3">
+                            <label for="name" class="form-label text-secondary small text-uppercase tracking-wide fw-bold">Full Name</label>
+                            <input type="text" class="form-control bg-black text-light border-secondary py-2" id="name" required placeholder="e.g. Roupyadeep Ghosal">
+                        </div>
+                        <div class="mb-3">
+                            <label for="department" class="form-label text-secondary small text-uppercase tracking-wide fw-bold">Department</label>
+                            <input type="text" class="form-control bg-black text-light border-secondary py-2" id="department" required placeholder="e.g. Computer Science">
+                        </div>
+                        <div class="mb-3">
+                            <label for="classRollNo" class="form-label text-secondary small text-uppercase tracking-wide fw-bold">Class Roll No</label>
+                            <input type="text" class="form-control bg-black text-light border-secondary py-2" id="classRollNo" required placeholder="e.g. CS-2024">
+                        </div>
+                        <div class="mb-4 text-center">
+                            <label class="form-label text-secondary small text-uppercase tracking-wide fw-bold w-100 text-start">Live Face Capture (Ensure face is visible in main scanner)</label>
+                            <div class="position-relative mx-auto rounded-3 overflow-hidden border border-secondary shadow-sm" style="width: 100%; max-width: 320px; aspect-ratio: 4/3; background: #0b1120;">
+                                <img src="http://localhost:5000/video_feed" class="w-100 h-100 object-fit-cover" alt="MJPEG Output" />
+                                <div id="captureFlash" class="position-absolute top-0 start-0 w-100 h-100 bg-white d-none" style="opacity: 0.8; z-index: 10;"></div>
+                            </div>
+                            <span class="text-secondary small mt-2 d-block">Press authenticate to grab 30 high quality frames from Python seamlessly.</span>
+                        </div>
+                        <div id="loginAlert" class="alert alert-danger d-none py-2" role="alert"></div>
+                        <div class="d-grid mt-2">
+                            <button type="submit" class="btn btn-primary py-2 fw-medium" id="loginBtn">
+                                <span class="spinner-border spinner-border-sm d-none me-2" role="status" aria-hidden="true" id="loginSpinner"></span>
+                                Authenticate & Login
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Motion One via Skypack -->
+    <script src="script.js"></script>
+</body>
+</html>

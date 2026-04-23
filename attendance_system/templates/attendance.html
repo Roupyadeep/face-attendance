@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-4 justify-content-center">
+    <div class="col-md-10">
+        <div class="glass-card">
+            <h1 class="mb-4">Real-time <span class="accent-text">Attendance</span></h1>
+            <div class="video-container">
+                <img id="attendance-feed" class="video-feed" src="" alt="Webcam Feed">
+            </div>
+            
+            <div class="mt-4 d-flex gap-3">
+                <button id="btn-start-attendance" class="btn btn-primary flex-grow-1">Start Session</button>
+                <button id="btn-stop-attendance" class="btn btn-outline-danger flex-grow-1 d-none">Stop Session</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('btn-start-attendance').addEventListener('click', async () => {
+        const response = await fetch('/api/start-attendance', { method: 'POST' });
+        if (response.ok) {
+            document.getElementById('btn-start-attendance').classList.add('d-none');
+            document.getElementById('btn-stop-attendance').classList.remove('d-none');
+            document.getElementById('attendance-feed').src = '/attendance-feed';
+        }
+    });
+
+    document.getElementById('btn-stop-attendance').addEventListener('click', async () => {
+        const response = await fetch('/api/stop-attendance', { method: 'POST' });
+        if (response.ok) {
+            document.getElementById('btn-stop-attendance').classList.add('d-none');
+            document.getElementById('btn-start-attendance').classList.remove('d-none');
+            document.getElementById('attendance-feed').src = '';
+        }
+    });
+</script>
+{% endblock %}

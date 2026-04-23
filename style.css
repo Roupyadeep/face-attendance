@@ -1,0 +1,186 @@
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #0b1120 !important; /* Rich deep navy/black bg */
+    color: #f8fafc;
+}
+
+.text-primary {
+    color: #3b82f6 !important;
+}
+
+.bg-primary {
+    background-color: #3b82f6 !important;
+}
+
+.border-primary {
+    border-color: #3b82f6 !important;
+}
+
+.bg-dark {
+    background-color: #1e293b !important;
+}
+
+.bg-black {
+    background-color: #0b1120 !important;
+}
+
+.border-secondary {
+    border-color: #1e293b !important;
+}
+
+.tracking-wide {
+    letter-spacing: 0.05em;
+}
+
+.max-w-7xl {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Glassmorphism Panel */
+.glass-panel {
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-panel.border-success {
+    border: 1px solid rgba(34, 197, 94, 0.4) !important;
+}
+
+/* Simulated Camera Feed */
+.camera-bg {
+    background: radial-gradient(circle at center, #1e293b 0%, #0b1120 100%);
+    opacity: 0.9;
+}
+.camera-bg::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0,0,0,0.2) 0px,
+        rgba(0,0,0,0.2) 1px,
+        transparent 1px,
+        transparent 3px
+    );
+    pointer-events: none;
+}
+
+/* Scanning Box UI */
+.scan-container {
+    width: 280px;
+    height: 280px;
+    transition: all 0.3s ease;
+}
+
+@media (min-width: 768px) {
+    .scan-container {
+        width: 320px;
+        height: 320px;
+    }
+}
+
+.scan-box {
+    width: 100%;
+    height: 100%;
+    box-shadow: 0 0 50px rgba(59, 130, 246, 0.15) inset, 0 0 20px rgba(59, 130, 246, 0.3);
+    background: rgba(59, 130, 246, 0.03);
+}
+
+/* Scan Line Animation (CSS fallback/enhancement) */
+.scan-line {
+    width: 100%;
+    height: 2px;
+    background: #3b82f6;
+    box-shadow: 0 0 15px 2px #3b82f6;
+    position: absolute;
+    top: 0;
+    left: 0;
+    animation: scan 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes scan {
+    0% { top: 0; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+}
+
+/* Scanner Corners */
+.corner {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-color: #3b82f6;
+    border-style: solid;
+    transition: border-color 0.3s ease;
+}
+
+.top-left {
+    top: -2px; left: -2px;
+    border-width: 4px 0 0 4px;
+    border-top-left-radius: 14px;
+}
+
+.top-right {
+    top: -2px; right: -2px;
+    border-width: 4px 4px 0 0;
+    border-top-right-radius: 14px;
+}
+
+.bottom-left {
+    bottom: -2px; left: -2px;
+    border-width: 0 0 4px 4px;
+    border-bottom-left-radius: 14px;
+}
+
+.bottom-right {
+    bottom: -2px; right: -2px;
+    border-width: 0 4px 4px 0;
+    border-bottom-right-radius: 14px;
+}
+
+/* Success State Colors */
+.scan-box.success {
+    border-color: #22c55e !important;
+    box-shadow: 0 0 50px rgba(34, 197, 94, 0.15) inset, 0 0 20px rgba(34, 197, 94, 0.3);
+    background: rgba(34, 197, 94, 0.05);
+}
+
+.scan-box.success .corner {
+    border-color: #22c55e;
+}
+
+.scan-box.success .scan-line {
+    background: #22c55e;
+    box-shadow: 0 0 15px 2px #22c55e;
+}
+
+/* List Group Dark Styling */
+.list-group-item {
+    background-color: transparent;
+    border-color: #1e293b;
+    color: #cbd5e1;
+    transition: background-color 0.2s, transform 0.2s ease;
+}
+
+.list-group-item:hover {
+    background-color: #1e293b;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #0b1120;
+}
+::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+}

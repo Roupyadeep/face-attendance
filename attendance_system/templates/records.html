@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Attendance <span class="accent-text">Records</span></h1>
+            <div class="d-flex gap-2">
+                <input type="date" id="date-filter" class="form-control bg-dark text-white border-secondary">
+                <button id="btn-export" class="btn btn-primary">Export CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="glass-card">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th><i class="fa-solid fa-user me-1"></i> Name</th>
+                            <th><i class="fa-solid fa-id-card me-1"></i> Roll</th>
+                            <th><i class="fa-solid fa-building me-1"></i> Department</th>
+                            <th><i class="fa-solid fa-calendar-day me-1"></i> Date</th>
+                            <th><i class="fa-solid fa-clock me-1"></i> Time</th>
+                            <th><i class="fa-solid fa-circle-check me-1"></i> Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="records-table-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="no-records" class="text-center py-5 d-none">
+                <div class="fs-1 mb-3">📂</div>
+                <h4 class="text-secondary">No records found for this date.</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const now = new Date();
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const dateInput = document.getElementById('date-filter');
+        dateInput.value = today;
+        
+        fetchRecords(today);
+        
+        dateInput.addEventListener('change', (e) => {
+            fetchRecords(e.target.value);
+        });
+
+        document.getElementById('btn-export').addEventListener('click', exportToCSV);
+    });
+
+    async function fetchRecords(date) {
+        try {
+            const response = await fetch(`/api/records?date=${date}`);
+            const data = await response.json();
+            
+            const body = document.getElementById('records-table-body');
+            const emptyState = document.getElementById('no-records');
+            body.innerHTML = '';
+            
+            const presentRecords = data.filter(r => r.status === 'Present');
+            
+            if (presentRecords.length === 0) {
+                emptyState.classList.remove('d-none');
+            } else {
+                emptyState.classList.add('d-none');
+                presentRecords.forEach((record, index) => {
+                    const row = document.createElement('tr');
+                    row.style.opacity = 0;
+                    row.innerHTML = `
+                        <td>${record.name}</td>
+                        <td>${record.roll}</td>
+                        <td>${record.department}</td>
+                        <td>${record.date}</td>
+                        <td>${record.timestamp.split(' ')[1]}</td>
+                        <td>
+                            <span class="status-present">
+                                Present
+                            </span>
+                        </td>
+                    `;
+                    body.appendChild(row);
+                    
+                    // Animate row entry
+                    setTimeout(() => {
+                        const { motion } = window.Motion;
+                        if (motion) {
+                            motion.animate(row, 
+                                { opacity: [0, 1], x: [-10, 0] }, 
+                                { duration: 0.3, delay: index * 0.05 }
+                            );
+                        } else {
+                            row.style.opacity = 1;
+                        }
+                    }, 0);
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching records:', error);
+        }
+    }
+
+    function exportToCSV() {
+        const table = document.querySelector("table");
+        const rows = Array.from(table.rows);
+        const date = document.getElementById('date-filter').value;
+        
+        let csvContent = "data:text/csv;charset=utf-8,";
+        
+        rows.forEach(row => {
+            const cols = Array.from(row.cells).map(cell => cell.innerText);
+            csvContent += cols.join(",") + "\r\n";
+        });
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `attendance_records_${date}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+{% endblock %}
